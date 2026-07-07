@@ -930,7 +930,8 @@ function rViewMove(idx){
 function rShowMoveBoard(p,choiceIdx){
   const move=p.choices[choiceIdx].move;
   drawBoard('rBoard',boardAfterWhiteResponse(p.opening,move),makeWhiteHL(move));
-  const isCorrect=choiceIdx===p.answer;
+  // 答え合わせ前は正誤を一切見せない(rConfirmedになってから初めて✓を出す)
+  const isCorrect=rConfirmed&&choiceIdx===p.answer;
   document.getElementById('rBoardLabel').textContent=`→ ${move}${isCorrect?' ✓':''}`;
 }
 function rHandleBtn(){ if(!rConfirmed) return; rIdx=(rIdx+1)%rFiltered.length; rLoad(); }

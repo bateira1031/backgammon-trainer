@@ -110,6 +110,11 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);
 .choice-btn .ck{font-size:9px;letter-spacing:0.14em;color:var(--text-dim);min-width:14px;}
 .choice-btn .cm{flex:1;}
 .choice-btn .cx{font-size:16px;margin-left:auto;}
+.choice-btn .ceq{font-size:11px;font-weight:600;letter-spacing:0.02em;white-space:nowrap;}
+.choice-btn .ceq.best{color:var(--correct);}
+.choice-btn .ceq.close{color:var(--text-dim);font-weight:400;}
+.choice-btn .ceq.error{color:var(--perfect);}
+.choice-btn .ceq.blunder{color:var(--wrong);}
 .choice-btn.pending{border-color:var(--accent);background:rgba(79,110,247,0.14);color:#c5cefc;}
 .choice-btn.pending .ck{color:var(--accent);}
 .choice-btn.correct{border-color:var(--correct);background:rgba(62,207,114,0.09);color:#c5f0d8;}
@@ -336,11 +341,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--mono);
     <div class="screen-title"><span class="t" data-ja="ピップカウント練習" data-en="PIP COUNT TRAINER">ピップカウント練習</span></div>
     <div class="stat-display" id="pStatDisp">—</div>
   </div>
-  <div class="filter-bar" style="padding-bottom:8px">
-    <button class="filter-btn active" data-lv="easy"   onclick="pSetDiff('easy')">EASY</button>
-    <button class="filter-btn"        data-lv="medium" onclick="pSetDiff('medium')">MEDIUM</button>
-    <button class="filter-btn"        data-lv="hard"   onclick="pSetDiff('hard')">HARD</button>
-  </div>
+  <div class="filter-bar" id="pFilterBar" style="padding-bottom:8px"></div>
+  <div class="upload-status" id="pLoadStatus"></div>
   <div class="board-wrap"><canvas class="board-canvas" id="pBoard"></canvas></div>
   <div class="pip-inputs">
     <div class="input-grid">
@@ -665,355 +667,15 @@ const OPENINGS_WHITE={
 const OPENINGS=OPENINGS_WHITE;
 const OP_KEYS=['65','64','63','63alt','62','61','54','53','52','51','43','42','41','32','31','21'];
 
-// ══════════════════════════════════════
-// PRESET PROBLEMS
-// ══════════════════════════════════════
-const PRESET_PROBLEMS=[
-  {id:'op65_my66_0',opening:'65',myRoll:'66',choices:[{move:'24/18(2) 13/7(2)'},{move:'13/1(2)'},{move:'24/18 13/7(3)'},{move:'24/18(2) 13/1'}],answer:0},
-  {id:'op65_my65_1',opening:'65',myRoll:'65',choices:[{move:'24/13'},{move:'24/18 13/8'},{move:'13/8 13/7'},{move:'13/7 6/1'}],answer:0},
-  {id:'op65_my64_2',opening:'65',myRoll:'64',choices:[{move:'8/2 6/2'},{move:'24/18 13/9'},{move:'24/20 13/7'},{move:'24/14'}],answer:0},
-  {id:'op65_my63_3',opening:'65',myRoll:'63',choices:[{move:'24/18 13/10'},{move:'24/21 13/7'},{move:'13/10 13/7'},{move:'24/15'}],answer:0},
-  {id:'op65_my62_4',opening:'65',myRoll:'62',choices:[{move:'24/18 13/11'},{move:'13/5'},{move:'13/11 13/7'},{move:'24/16'}],answer:0},
-  {id:'op65_my61_5',opening:'65',myRoll:'61',choices:[{move:'13/7 8/7'},{move:'13/7 6/5'},{move:'24/13 13/7'},{move:'24/23 24/18'}],answer:0},
-  {id:'op65_my55_6',opening:'65',myRoll:'55',choices:[{move:'8/3(2) 6/1(2)'},{move:'13/8(2) 6/1(2)'},{move:'13/3(2)'},{move:'13/3 8/3 6/1'}],answer:0},
-  {id:'op65_my54_7',opening:'65',myRoll:'54',choices:[{move:'24/20 13/8'},{move:'24/20 6/1'},{move:'13/9 13/8'},{move:'13/9 6/1'}],answer:0},
-  {id:'op65_my53_8',opening:'65',myRoll:'53',choices:[{move:'8/3 6/3'},{move:'24/21 13/8'},{move:'13/10 13/8'},{move:'24/21 6/1'}],answer:0},
-  {id:'op65_my52_9',opening:'65',myRoll:'52',choices:[{move:'13/11 13/8'},{move:'24/22 13/8'},{move:'13/11 6/1'},{move:'13/8 6/4'}],answer:0},
-  {id:'op65_my51_10',opening:'65',myRoll:'51',choices:[{move:'24/23 13/8'},{move:'13/8 6/5'},{move:'24/18'},{move:'13/7'}],answer:0},
-  {id:'op65_my44_11',opening:'65',myRoll:'44',choices:[{move:'24/20(2) 13/9(2)'},{move:'24/20(2) 6/2(2)'},{move:'24/16(2)'},{move:'13/5(2)'}],answer:0},
-  {id:'op65_my43_12',opening:'65',myRoll:'43',choices:[{move:'24/21 13/9'},{move:'13/10 13/9'},{move:'24/20 13/10'},{move:'24/21 24/20'}],answer:0},
-  {id:'op65_my42_13',opening:'65',myRoll:'42',choices:[{move:'24/20 13/11'},{move:'24/22 13/9'},{move:'8/4 6/4'},{move:'24/22 24/20'}],answer:0},
-  {id:'op65_my41_14',opening:'65',myRoll:'41',choices:[{move:'24/23 24/20'},{move:'24/23 13/9'},{move:'13/8'},{move:'13/9 8/7'}],answer:0},
-  {id:'op65_my33_15',opening:'65',myRoll:'33',choices:[{move:'24/21(2) 13/10(2)'},{move:'24/18(2)'},{move:'24/21(2) 8/5(2)'},{move:'24/21 13/10(3)'}],answer:0},
-  {id:'op65_my32_16',opening:'65',myRoll:'32',choices:[{move:'24/21 13/11'},{move:'24/22 13/10'},{move:'24/21 8/6'},{move:'24/22 24/21'}],answer:0},
-  {id:'op65_my31_17',opening:'65',myRoll:'31',choices:[{move:'8/5 6/5'},{move:'24/23 24/21'},{move:'24/23 13/10'},{move:'24/20'}],answer:0},
-  {id:'op65_my22_18',opening:'65',myRoll:'22',choices:[{move:'24/20(2)'},{move:'24/22(2) 13/11(2)'},{move:'24/22 13/11(3)'},{move:'24/22 13/11(2) 8/6'}],answer:0},
-  {id:'op65_my21_19',opening:'65',myRoll:'21',choices:[{move:'24/21'},{move:'24/23 13/11'},{move:'24/23 24/22'},{move:'24/23 8/6'}],answer:0},
-  {id:'op65_my11_20',opening:'65',myRoll:'11',choices:[{move:'8/5 6/5'},{move:'24/23 24/21'},{move:'24/22(2)'},{move:'24/22 8/6'}],answer:0},
-  {id:'op64_my66_21',opening:'64',myRoll:'66',choices:[{move:'24/18(2) 13/7(2)'},{move:'13/1*(2)'},{move:'24/18 13/7(3)'},{move:'24/18(2) 8/2(2)'}],answer:0},
-  {id:'op64_my65_22',opening:'64',myRoll:'65',choices:[{move:'24/13'},{move:'24/18 13/8'},{move:'24/18 6/1*'},{move:'13/7 8/7'}],answer:0},
-  {id:'op64_my64_23',opening:'64',myRoll:'64',choices:[{move:'8/2 6/2'},{move:'24/18 13/9'},{move:'24/20 13/7'},{move:'24/20 24/18'}],answer:0},
-  {id:'op64_my63_24',opening:'64',myRoll:'63',choices:[{move:'24/18 13/10'},{move:'24/21 13/7'},{move:'24/21 24/18'},{move:'13/10 13/7'}],answer:0},
-  {id:'op64_my62_25',opening:'64',myRoll:'62',choices:[{move:'24/18 13/11*'},{move:'13/7 13/11*'},{move:'13/11* 11/5'},{move:'13/11* 8/2'}],answer:0},
-  {id:'op64_my61_26',opening:'64',myRoll:'61',choices:[{move:'13/7 8/7'},{move:'13/8 6/5'},{move:'24/23 13/8'},{move:'24/18'}],answer:0},
-  {id:'op64_my55_27',opening:'64',myRoll:'55',choices:[{move:'8/3(2) 6/1*(2)'},{move:'13/8(2) 6/1*(2)'},{move:'13/3(2)'},{move:'13/3 8/3 6/1*'}],answer:0},
-  {id:'op64_my54_28',opening:'64',myRoll:'54',choices:[{move:'24/20 13/8'},{move:'24/20 6/1*'},{move:'13/9 13/8'},{move:'24/15'}],answer:0},
-  {id:'op64_my53_29',opening:'64',myRoll:'53',choices:[{move:'8/3 6/3'},{move:'24/21 13/8'},{move:'13/10 13/8'},{move:'13/5'}],answer:0},
-  {id:'op64_my52_30',opening:'64',myRoll:'52',choices:[{move:'13/11* 13/8'},{move:'13/11* 6/1*'},{move:'13/11* 11/6'},{move:'24/22 13/8'}],answer:0},
-  {id:'op64_my51_31',opening:'64',myRoll:'51',choices:[{move:'13/8 6/5'},{move:'24/23 13/8'},{move:'24/18'},{move:'13/7'}],answer:0},
-  {id:'op64_my44_32',opening:'64',myRoll:'44',choices:[{move:'24/20(2) 13/9(2)'},{move:'24/16(2)'},{move:'24/20(2) 8/4(2)'},{move:'24/20(2) 6/2(2)'}],answer:0},
-  {id:'op64_my43_33',opening:'64',myRoll:'43',choices:[{move:'24/20 13/10'},{move:'24/21 13/9'},{move:'13/10 13/9'},{move:'24/21 24/20'}],answer:0},
-  {id:'op64_my42_34',opening:'64',myRoll:'42',choices:[{move:'24/20 13/11*'},{move:'13/9 13/11*'},{move:'13/11* 11/7'},{move:'8/4 6/4'}],answer:0},
-  {id:'op64_my41_35',opening:'64',myRoll:'41',choices:[{move:'13/9 6/5'},{move:'24/23 13/9'},{move:'24/20 6/5'},{move:'24/23 24/20'}],answer:0},
-  {id:'op64_my33_36',opening:'64',myRoll:'33',choices:[{move:'8/5(2) 6/3(2)'},{move:'24/21(2) 13/10(2)'},{move:'24/21(2) 6/3(2)'},{move:'24/21(2) 8/5(2)'}],answer:0},
-  {id:'op64_my32_37',opening:'64',myRoll:'32',choices:[{move:'24/21 13/11*'},{move:'13/10 13/11*'},{move:'13/11* 11/8'},{move:'13/11* 6/3'}],answer:0},
-  {id:'op64_my31_38',opening:'64',myRoll:'31',choices:[{move:'24/21 13/11*'},{move:'13/10 13/11*'},{move:'24/23 13/10'},{move:'13/11* 11/8'}],answer:0},
-  {id:'op64_my22_39',opening:'64',myRoll:'22',choices:[{move:'13/11*(2) 6/4(2)'},{move:'24/22 13/11* 6/4(2)'},{move:'13/11* 11/9 6/4(2)'},{move:'8/4 6/4 13/11*'}],answer:0},
-  {id:'op64_my21_40',opening:'64',myRoll:'21',choices:[{move:'24/23 13/11*'},{move:'13/11* 11/10'},{move:'13/11* 6/5'},{move:'13/11* 8/7'}],answer:0},
-  {id:'op64_my11_41',opening:'64',myRoll:'11',choices:[{move:'8/7(2) 6/5(2)'},{move:'24/23 6/5(2) 8/7'},{move:'24/23(2) 6/5(2)'},{move:'24/21 6/5'}],answer:0},
-  {id:'op63_my66_42',opening:'63',myRoll:'66',choices:[{move:'24/18(2) 13/7*(2)'},{move:'13/7*(2) 7/1*(2)'},{move:'24/18 13/7*(3)'},{move:'24/18(2) 13/7* 7/1*'}],answer:0},
-  {id:'op63_my65_43',opening:'63',myRoll:'65',choices:[{move:'24/13'},{move:'24/18 13/8'},{move:'13/7* 6/1*'},{move:'13/8 13/7*'}],answer:0},
-  {id:'op63_my64_44',opening:'63',myRoll:'64',choices:[{move:'24/18 13/9'},{move:'24/20 13/7*'},{move:'13/9 13/7*'},{move:'24/15*'}],answer:0},
-  {id:'op63_my63_45',opening:'63',myRoll:'63',choices:[{move:'8/3 6/3'},{move:'24/21 6/1*'},{move:'24/21 13/8'},{move:'13/8 6/3'}],answer:0},
-  {id:'op63_my62_46',opening:'63',myRoll:'62',choices:[{move:'24/22 13/7*'},{move:'24/18 13/7*'},{move:'13/7* 7/5'},{move:'13/7* 8/6'}],answer:0},
-  {id:'op63_my61_47',opening:'63',myRoll:'61',choices:[{move:'13/7* 8/7'},{move:'13/8 6/5'},{move:'24/23 13/7*'},{move:'24/18'}],answer:0},
-  {id:'op63_my55_48',opening:'63',myRoll:'55',choices:[{move:'8/3(2) 6/1*(2)'},{move:'13/8(2) 6/1*(2)'},{move:'13/3 8/3 6/1*'},{move:'13/3(2)'}],answer:0},
-  {id:'op63_my54_49',opening:'63',myRoll:'54',choices:[{move:'24/20 13/8'},{move:'24/20 6/1*'},{move:'13/9 13/8'},{move:'24/15*'}],answer:0},
-  {id:'op63_my53_50',opening:'63',myRoll:'53',choices:[{move:'8/3 6/3'},{move:'24/21 6/1*'},{move:'24/21 13/8'},{move:'13/5'}],answer:0},
-  {id:'op63_my52_51',opening:'63',myRoll:'52',choices:[{move:'24/22 6/1*'},{move:'24/22 13/8'},{move:'13/8 6/4'},{move:'13/11 13/8'}],answer:0},
-  {id:'op63_my51_52',opening:'63',myRoll:'51',choices:[{move:'13/7* 8/7'},{move:'24/23 13/7*'},{move:'13/7* 7/6'},{move:'24/18 8/7*'}],answer:0},
-  {id:'op63_my44_53',opening:'63',myRoll:'44',choices:[{move:'24/20(2) 13/9(2)'},{move:'24/20(2) 6/2(2)'},{move:'24/16(2)'},{move:'13/5(2)'}],answer:0},
-  {id:'op63_my43_54',opening:'63',myRoll:'43',choices:[{move:'24/21 13/9'},{move:'24/20 13/10'},{move:'13/10 13/9'},{move:'24/21 24/20'}],answer:0},
-  {id:'op63_my42_55',opening:'63',myRoll:'42',choices:[{move:'13/7* 6/4'},{move:'24/20 13/7*'},{move:'13/9 13/7*'},{move:'8/4 6/4'}],answer:0},
-  {id:'op63_my41_56',opening:'63',myRoll:'41',choices:[{move:'13/9 8/7*'},{move:'24/20 8/7*'},{move:'8/7* 7/3'},{move:'24/23 24/20'}],answer:0},
-  {id:'op63_my33_57',opening:'63',myRoll:'33',choices:[{move:'13/7*(2) 6/3(2)'},{move:'13/7* 8/5(2) 6/3'},{move:'13/7* 6/3(2)'},{move:'24/15* 13/10'}],answer:0},
-  {id:'op63_my32_58',opening:'63',myRoll:'32',choices:[{move:'24/22 13/7*'},{move:'13/11 13/7*'},{move:'24/21 13/10'},{move:'13/7* 7/4'}],answer:0},
-  {id:'op63_my31_59',opening:'63',myRoll:'31',choices:[{move:'8/5 6/5'},{move:'24/21 13/11'},{move:'24/23 13/10'},{move:'13/11 8/7*'}],answer:0},
-  {id:'op63_my22_60',opening:'63',myRoll:'22',choices:[{move:'13/11(2) 6/4(2)'},{move:'24/22(2) 6/4(2)'},{move:'24/20(2)'},{move:'24/22 8/4 6/4'}],answer:0},
-  {id:'op63_my21_61',opening:'63',myRoll:'21',choices:[{move:'24/22 13/7*'},{move:'13/11 13/7*'},{move:'13/7* 7/6'},{move:'13/7* 6/3'}],answer:0},
-  {id:'op63_my11_62',opening:'63',myRoll:'11',choices:[{move:'8/7*(2) 6/5(2)'},{move:'24/23 8/7*(2) 6/5'},{move:'13/7* 8/7'},{move:'13/7* 7/6'}],answer:0},
-  {id:'op63alt_my66_63',opening:'63alt',myRoll:'66',choices:[{move:'24/18(2) 13/7(2)'},{move:'13/1*(2)'},{move:'24/18 13/7(3)'},{move:'24/18(2) 8/2(2)'}],answer:0},
-  {id:'op63alt_my65_64',opening:'63alt',myRoll:'65',choices:[{move:'24/13'},{move:'24/18 13/8'},{move:'13/8 13/7'},{move:'13/7 6/1'}],answer:0},
-  {id:'op63alt_my64_65',opening:'63alt',myRoll:'64',choices:[{move:'24/18 13/9'},{move:'8/2 6/2'},{move:'24/20 13/7'},{move:'24/20 24/18'}],answer:0},
-  {id:'op63alt_my63_66',opening:'63alt',myRoll:'63',choices:[{move:'24/18 13/10*'},{move:'13/7 13/10*'},{move:'13/10* 10/4'},{move:'8/3 6/3'}],answer:0},
-  {id:'op63alt_my62_67',opening:'63alt',myRoll:'62',choices:[{move:'13/5'},{move:'24/18 13/11'},{move:'24/22 13/7'},{move:'24/22 24/18'}],answer:0},
-  {id:'op63alt_my61_68',opening:'63alt',myRoll:'61',choices:[{move:'13/7 8/7'},{move:'13/8 6/5'},{move:'24/23 13/8'},{move:'24/18'}],answer:0},
-  {id:'op63alt_my55_69',opening:'63alt',myRoll:'55',choices:[{move:'8/3(2) 6/1*(2)'},{move:'13/8(2) 6/1*(2)'},{move:'13/3 8/3 6/1*'},{move:'13/3(2)'}],answer:0},
-  {id:'op63alt_my54_70',opening:'63alt',myRoll:'54',choices:[{move:'24/20 13/8'},{move:'24/20 6/1*'},{move:'13/9 13/8'},{move:'13/4'}],answer:0},
-  {id:'op63alt_my53_71',opening:'63alt',myRoll:'53',choices:[{move:'13/8 13/10*'},{move:'13/10* 6/1*'},{move:'13/10* 10/5'},{move:'8/3 6/3'}],answer:0},
-  {id:'op63alt_my52_72',opening:'63alt',myRoll:'52',choices:[{move:'24/22 13/8'},{move:'24/22 6/1*'},{move:'13/8 6/4'},{move:'13/11 13/8'}],answer:0},
-  {id:'op63alt_my51_73',opening:'63alt',myRoll:'51',choices:[{move:'24/23 13/8'},{move:'13/8 6/5'},{move:'24/18'},{move:'13/7'}],answer:0},
-  {id:'op63alt_my44_74',opening:'63alt',myRoll:'44',choices:[{move:'24/20(2) 13/9(2)'},{move:'24/20(2) 8/4(2)'},{move:'24/16(2)'},{move:'24/20(2) 6/2(2)'}],answer:0},
-  {id:'op63alt_my43_75',opening:'63alt',myRoll:'43',choices:[{move:'24/20 13/10*'},{move:'13/9 13/10*'},{move:'13/10* 10/6'},{move:'13/10* 8/4'}],answer:0},
-  {id:'op63alt_my42_76',opening:'63alt',myRoll:'42',choices:[{move:'8/4 6/4'},{move:'24/22 13/9'},{move:'24/20 13/11'},{move:'24/22 24/20'}],answer:0},
-  {id:'op63alt_my41_77',opening:'63alt',myRoll:'41',choices:[{move:'24/23 13/9'},{move:'13/9 6/5'},{move:'24/23 24/20'},{move:'24/20 6/5'}],answer:0},
-  {id:'op63alt_my33_78',opening:'63alt',myRoll:'33',choices:[{move:'13/10*(2) 6/3(2)'},{move:'13/10*(2) 8/5(2)'},{move:'24/21(2) 13/10*(2)'},{move:'24/21 13/10* 6/3(2)'}],answer:0},
-  {id:'op63alt_my32_79',opening:'63alt',myRoll:'32',choices:[{move:'24/22 13/10*'},{move:'13/11 13/10*'},{move:'13/10* 10/8'},{move:'13/10* 8/6'}],answer:0},
-  {id:'op63alt_my31_80',opening:'63alt',myRoll:'31',choices:[{move:'24/22 6/5(2)'},{move:'8/7(2) 6/5(2)'},{move:'24/23 6/5(3)'},{move:'24/23 8/7 6/5(2)'}],answer:0},
-  {id:'op63alt_my22_81',opening:'63alt',myRoll:'22',choices:[{move:'13/11(2) 6/4(2)'},{move:'24/22(2) 6/4(2)'},{move:'13/9 6/4(2)'},{move:'24/20(2)'}],answer:0},
-  {id:'op63alt_my21_82',opening:'63alt',myRoll:'21',choices:[{move:'13/10*'},{move:'24/21'},{move:'24/23 13/11'},{move:'24/22 6/5'}],answer:0},
-  {id:'op63alt_my11_83',opening:'63alt',myRoll:'11',choices:[{move:'24/23 13/10*'},{move:'13/10* 10/9'},{move:'8/5 6/5'},{move:'13/10* 6/5'}],answer:0},
-  {id:'op62_my66_84',opening:'62',myRoll:'66',choices:[{move:'24/18(2) 13/7*(2)'},{move:'13/7*(2) 7/1*(2)'},{move:'24/18 13/7*(3)'},{move:'24/18(2) 13/7* 7/1*'}],answer:0},
-  {id:'op62_my65_85',opening:'62',myRoll:'65',choices:[{move:'13/7* 6/1*'},{move:'13/8 13/7*'},{move:'24/13'},{move:'24/18 13/8'}],answer:0},
-  {id:'op62_my64_86',opening:'62',myRoll:'64',choices:[{move:'24/14*'},{move:'24/20 13/7*'},{move:'13/9 13/7*'},{move:'24/20 13/9'}],answer:0},
-  {id:'op62_my63_87',opening:'62',myRoll:'63',choices:[{move:'24/21 13/7*'},{move:'13/10 13/7*'},{move:'13/7* 7/4'},{move:'13/7* 6/3'}],answer:0},
-  {id:'op62_my62_88',opening:'62',myRoll:'62',choices:[{move:'24/22 13/7*'},{move:'13/11 13/7*'},{move:'13/7* 7/5'},{move:'13/7* 8/6'}],answer:0},
-  {id:'op62_my61_89',opening:'62',myRoll:'61',choices:[{move:'13/7* 8/7'},{move:'13/7* 7/6'},{move:'24/23 13/7*'},{move:'24/18 8/7*'}],answer:0},
-  {id:'op62_my55_90',opening:'62',myRoll:'55',choices:[{move:'8/3(2) 6/1*(2)'},{move:'13/8(2) 6/1*(2)'},{move:'13/3 8/3 6/1*'},{move:'13/3 6/1*(2)'}],answer:0},
-  {id:'op62_my54_91',opening:'62',myRoll:'54',choices:[{move:'24/20 6/1*'},{move:'24/20 13/8'},{move:'13/9 13/8'},{move:'13/4'}],answer:0},
-  {id:'op62_my53_92',opening:'62',myRoll:'53',choices:[{move:'8/3 6/3'},{move:'24/21 13/7*'},{move:'13/10 13/7*'},{move:'24/21 6/1*'}],answer:0},
-  {id:'op62_my52_93',opening:'62',myRoll:'52',choices:[{move:'24/22 13/7*'},{move:'13/11 13/7*'},{move:'13/7* 7/5'},{move:'13/7* 8/5'}],answer:0},
-  {id:'op62_my51_94',opening:'62',myRoll:'51',choices:[{move:'13/7* 8/7'},{move:'24/23 13/7*'},{move:'13/7* 7/6'},{move:'24/18 8/7*'}],answer:0},
-  {id:'op62_my44_95',opening:'62',myRoll:'44',choices:[{move:'24/20(2) 13/9(2)'},{move:'24/20(2) 6/2(2)'},{move:'24/16(2)'},{move:'13/5(2)'}],answer:0},
-  {id:'op62_my43_96',opening:'62',myRoll:'43',choices:[{move:'24/21 13/9'},{move:'13/10 13/9'},{move:'24/20 13/10'},{move:'24/21 24/20'}],answer:0},
-  {id:'op62_my42_97',opening:'62',myRoll:'42',choices:[{move:'13/7* 6/4'},{move:'24/20 13/7*'},{move:'13/9 13/7*'},{move:'8/4 6/4'}],answer:0},
-  {id:'op62_my41_98',opening:'62',myRoll:'41',choices:[{move:'13/9 8/7*'},{move:'24/20 8/7*'},{move:'8/7* 7/3'},{move:'24/23 24/20'}],answer:0},
-  {id:'op62_my33_99',opening:'62',myRoll:'33',choices:[{move:'13/7*(2) 6/3(2)'},{move:'24/18(2)'},{move:'13/7* 6/3(3)'},{move:'13/7* 8/5 6/3(2)'}],answer:0},
-  {id:'op62_my32_100',opening:'62',myRoll:'32',choices:[{move:'24/22 13/7*'},{move:'13/11 13/7*'},{move:'13/7* 7/4'},{move:'24/21 13/11'}],answer:0},
-  {id:'op62_my31_101',opening:'62',myRoll:'31',choices:[{move:'13/7* 8/7'},{move:'8/5 6/5'},{move:'24/23 13/7*'},{move:'24/21 13/11'}],answer:0},
-  {id:'op62_my22_102',opening:'62',myRoll:'22',choices:[{move:'13/7*(2) 6/4(2)'},{move:'24/22 13/7* 6/4(2)'},{move:'24/20(2)'},{move:'13/9 6/4(2)'}],answer:0},
-  {id:'op62_my21_103',opening:'62',myRoll:'21',choices:[{move:'13/7* 8/7'},{move:'24/22 13/7*'},{move:'13/7* 7/6'},{move:'13/11 13/7*'}],answer:0},
-  {id:'op62_my11_104',opening:'62',myRoll:'11',choices:[{move:'13/7*(2) 6/5(2)'},{move:'8/7*(2) 6/5(2)'},{move:'24/23 13/7* 6/5(2)'},{move:'13/7* 7/6 6/5(2)'}],answer:0},
-  {id:'op61_my66_105',opening:'61',myRoll:'66',choices:[{move:'24/18(2) 13/7(2)'},{move:'13/7(2) 7/1*(2)'},{move:'24/18 13/7(3)'},{move:'24/18(2) 13/7 7/1*'}],answer:0},
-  {id:'op61_my65_106',opening:'61',myRoll:'65',choices:[{move:'24/13'},{move:'13/7 6/1*'},{move:'24/18 13/8'},{move:'13/8 13/7'}],answer:0},
-  {id:'op61_my64_107',opening:'61',myRoll:'64',choices:[{move:'24/14'},{move:'13/7 6/1*'},{move:'24/20 13/7'},{move:'8/2 6/2'}],answer:0},
-  {id:'op61_my63_108',opening:'61',myRoll:'63',choices:[{move:'24/15'},{move:'13/7 6/1*'},{move:'24/21 13/7'},{move:'24/18 13/10'}],answer:0},
-  {id:'op61_my62_109',opening:'61',myRoll:'62',choices:[{move:'13/5'},{move:'13/7 6/1*'},{move:'24/16'},{move:'24/18 13/11'}],answer:0},
-  {id:'op61_my61_110',opening:'61',myRoll:'61',choices:[{move:'13/7 8/7'},{move:'13/7* 7/6*'},{move:'13/6'},{move:'8/1*'}],answer:0},
-  {id:'op61_my55_111',opening:'61',myRoll:'55',choices:[{move:'13/7(2) 6/1*(2)'},{move:'8/3(2) 6/1*(2)'},{move:'13/3(2)'},{move:'13/8(2) 6/1*(2)'}],answer:0},
-  {id:'op61_my54_112',opening:'61',myRoll:'54',choices:[{move:'13/7 6/1*'},{move:'24/20 13/7'},{move:'24/20 6/1*'},{move:'13/8 13/7'}],answer:0},
-  {id:'op61_my53_113',opening:'61',myRoll:'53',choices:[{move:'13/7 6/1*'},{move:'8/3 6/3'},{move:'24/21 13/7'},{move:'13/8 13/7'}],answer:0},
-  {id:'op61_my52_114',opening:'61',myRoll:'52',choices:[{move:'13/7 6/1*'},{move:'24/22 13/7'},{move:'13/11 13/7'},{move:'13/7 8/6'}],answer:0},
-  {id:'op61_my51_115',opening:'61',myRoll:'51',choices:[{move:'13/7 8/7'},{move:'13/7 6/5'},{move:'24/23 13/7'},{move:'24/18'}],answer:0},
-  {id:'op61_my44_116',opening:'61',myRoll:'44',choices:[{move:'13/7(2) 6/1*(2)'},{move:'24/20(2) 13/9(2)'},{move:'24/20(2) 6/1*(2)'},{move:'24/16(2)'}],answer:0},
-  {id:'op61_my43_117',opening:'61',myRoll:'43',choices:[{move:'13/7 6/1*'},{move:'24/21 13/7'},{move:'13/9 13/7'},{move:'24/20 13/7'}],answer:0},
-  {id:'op61_my42_118',opening:'61',myRoll:'42',choices:[{move:'13/7 6/1*'},{move:'24/20 13/7'},{move:'13/9 13/7'},{move:'8/4 6/4'}],answer:0},
-  {id:'op61_my41_119',opening:'61',myRoll:'41',choices:[{move:'13/7 8/7'},{move:'24/23 13/7'},{move:'13/7 6/5'},{move:'24/20 6/1*'}],answer:0},
-  {id:'op61_my33_120',opening:'61',myRoll:'33',choices:[{move:'13/7(2) 6/1*(2)'},{move:'24/21(2) 13/10(2)'},{move:'13/7(2) 7/4(2)'},{move:'24/21(2) 6/1*(2)'}],answer:0},
-  {id:'op61_my32_121',opening:'61',myRoll:'32',choices:[{move:'13/7 6/1*'},{move:'24/22 13/7'},{move:'13/11 13/7'},{move:'13/7 8/6'}],answer:0},
-  {id:'op61_my31_122',opening:'61',myRoll:'31',choices:[{move:'13/7 8/7'},{move:'8/5 6/5'},{move:'24/23 13/7'},{move:'24/21 13/11'}],answer:0},
-  {id:'op61_my22_123',opening:'61',myRoll:'22',choices:[{move:'13/7(2) 6/1*(2)'},{move:'24/22(2) 6/1*(2)'},{move:'13/11 13/7 6/1*(2)'},{move:'24/20(2)'}],answer:0},
-  {id:'op61_my21_124',opening:'61',myRoll:'21',choices:[{move:'13/7 8/7'},{move:'24/22 13/7'},{move:'13/7 6/5'},{move:'13/11 13/7'}],answer:0},
-  {id:'op61_my11_125',opening:'61',myRoll:'11',choices:[{move:'13/7(2) 8/7(2)'},{move:'8/7(2) 6/5(2)'},{move:'13/7 8/7 6/5(2)'},{move:'24/23 13/7 8/7'}],answer:0},
-  {id:'op54_my66_126',opening:'54',myRoll:'66',choices:[{move:'24/18(2) 13/7(2)'},{move:'13/7(2) 8/2*(2)'},{move:'24/18 13/7(3)'},{move:'24/18(2) 8/2*(2)'}],answer:0},
-  {id:'op54_my65_127',opening:'54',myRoll:'65',choices:[{move:'24/13'},{move:'24/18 13/8'},{move:'13/8 13/7'},{move:'13/7 6/1*'}],answer:0},
-  {id:'op54_my64_128',opening:'54',myRoll:'64',choices:[{move:'8/2* 6/2'},{move:'24/14'},{move:'24/18 13/9'},{move:'24/20 8/2*'}],answer:0},
-  {id:'op54_my63_129',opening:'54',myRoll:'63',choices:[{move:'24/15'},{move:'24/18 13/10'},{move:'24/21 13/7'},{move:'24/21 24/18'}],answer:0},
-  {id:'op54_my62_130',opening:'54',myRoll:'62',choices:[{move:'24/16'},{move:'24/18 13/11'},{move:'24/22 24/18'},{move:'13/5'}],answer:0},
-  {id:'op54_my61_131',opening:'54',myRoll:'61',choices:[{move:'13/7 8/7'},{move:'24/23 24/18'},{move:'13/6'},{move:'13/7 6/5'}],answer:0},
-  {id:'op54_my55_132',opening:'54',myRoll:'55',choices:[{move:'13/3(2)'},{move:'13/3 8/3(2)'},{move:'13/8(2) 13/3'},{move:'13/8(4)'}],answer:0},
-  {id:'op54_my54_133',opening:'54',myRoll:'54',choices:[{move:'24/20 13/8'},{move:'13/9 13/8'},{move:'24/15'},{move:'13/4'}],answer:0},
-  {id:'op54_my53_134',opening:'54',myRoll:'53',choices:[{move:'8/3 6/3'},{move:'24/21 13/8'},{move:'13/10 13/8'},{move:'13/5'}],answer:0},
-  {id:'op54_my52_135',opening:'54',myRoll:'52',choices:[{move:'24/22 13/8'},{move:'13/11 13/8'},{move:'13/8 6/4'},{move:'13/6'}],answer:0},
-  {id:'op54_my51_136',opening:'54',myRoll:'51',choices:[{move:'24/23 13/8'},{move:'13/8 6/5'},{move:'24/18'},{move:'13/7'}],answer:0},
-  {id:'op54_my44_137',opening:'54',myRoll:'44',choices:[{move:'24/20(2) 13/9(2)'},{move:'24/20(2) 8/4*(2)'},{move:'24/20(2) 6/2(2)'},{move:'24/16(2)'}],answer:0},
-  {id:'op54_my43_138',opening:'54',myRoll:'43',choices:[{move:'24/20 13/9'},{move:'13/9 13/8'},{move:'24/21 13/8'},{move:'24/20 13/8'}],answer:0},
-  {id:'op54_my42_139',opening:'54',myRoll:'42',choices:[{move:'8/4* 6/4'},{move:'24/20 13/11'},{move:'24/22 13/9'},{move:'13/11 13/9'}],answer:0},
-  {id:'op54_my41_140',opening:'54',myRoll:'41',choices:[{move:'24/23 13/9'},{move:'13/9 6/5'},{move:'24/23 24/20'},{move:'24/20 6/5'}],answer:0},
-  {id:'op54_my33_141',opening:'54',myRoll:'33',choices:[{move:'24/21(2) 13/10(2)'},{move:'24/21(2) 6/3(2)'},{move:'13/10(2) 6/3(2)'},{move:'8/5(2) 6/3(2)'}],answer:0},
-  {id:'op54_my32_142',opening:'54',myRoll:'32',choices:[{move:'24/22 13/10'},{move:'13/11 13/10'},{move:'13/8'},{move:'13/10 6/4'}],answer:0},
-  {id:'op54_my31_143',opening:'54',myRoll:'31',choices:[{move:'8/5 6/5'},{move:'24/23 13/10'},{move:'24/20'},{move:'13/9'}],answer:0},
-  {id:'op54_my22_144',opening:'54',myRoll:'22',choices:[{move:'24/22(2) 6/4(2)'},{move:'13/11(2) 6/4(2)'},{move:'24/20(2)'},{move:'24/22 13/11 6/4(2)'}],answer:0},
-  {id:'op54_my21_145',opening:'54',myRoll:'21',choices:[{move:'24/23 13/11'},{move:'24/23 24/22'},{move:'13/11 6/5'},{move:'13/10'}],answer:0},
-  {id:'op54_my11_146',opening:'54',myRoll:'11',choices:[{move:'8/7(2) 6/5(2)'},{move:'24/22 6/5(2)'},{move:'24/23(2) 6/5(2)'},{move:'24/23 6/5(3)'}],answer:0},
-  {id:'op53_my66_147',opening:'53',myRoll:'66',choices:[{move:'24/18(2) 13/7(2)'},{move:'24/18 13/7(3)'},{move:'13/7(2) 8/2*(2)'},{move:'24/18(2) 8/2*(2)'}],answer:0},
-  {id:'op53_my65_148',opening:'53',myRoll:'65',choices:[{move:'24/13'},{move:'24/18 13/8'},{move:'13/8 13/7'},{move:'13/7 6/1'}],answer:0},
-  {id:'op53_my64_149',opening:'53',myRoll:'64',choices:[{move:'8/2 6/2'},{move:'24/18 13/9'},{move:'24/20 13/7'},{move:'24/14'}],answer:0},
-  {id:'op53_my63_150',opening:'53',myRoll:'63',choices:[{move:'24/18 13/10'},{move:'24/15'},{move:'24/21 13/7'},{move:'24/21 24/18'}],answer:0},
-  {id:'op53_my62_151',opening:'53',myRoll:'62',choices:[{move:'24/18 13/11'},{move:'13/5'},{move:'24/16'},{move:'13/11 13/7'}],answer:0},
-  {id:'op53_my61_152',opening:'53',myRoll:'61',choices:[{move:'13/7 8/7'},{move:'24/23 13/7'},{move:'13/6'},{move:'13/7 6/5'}],answer:0},
-  {id:'op53_my55_153',opening:'53',myRoll:'55',choices:[{move:'13/3(2)'},{move:'13/3 8/3(2)'},{move:'13/8(2) 13/3'},{move:'13/8(4)'}],answer:0},
-  {id:'op53_my54_154',opening:'53',myRoll:'54',choices:[{move:'24/20 13/8'},{move:'13/9 13/8'},{move:'24/15'},{move:'13/4'}],answer:0},
-  {id:'op53_my53_155',opening:'53',myRoll:'53',choices:[{move:'8/3 6/3'},{move:'24/21 13/8'},{move:'13/10 13/8'},{move:'13/5'}],answer:0},
-  {id:'op53_my52_156',opening:'53',myRoll:'52',choices:[{move:'13/11 13/8'},{move:'13/6'},{move:'13/8 6/4'},{move:'13/11 8/3'}],answer:0},
-  {id:'op53_my51_157',opening:'53',myRoll:'51',choices:[{move:'24/23 13/8'},{move:'13/8 6/5'},{move:'24/18'},{move:'13/7'}],answer:0},
-  {id:'op53_my44_158',opening:'53',myRoll:'44',choices:[{move:'24/20(2) 13/9(2)'},{move:'24/20(2) 8/4(2)'},{move:'24/20(2) 6/2(2)'},{move:'24/16(2)'}],answer:0},
-  {id:'op53_my43_159',opening:'53',myRoll:'43',choices:[{move:'24/21 13/9'},{move:'13/10 13/9'},{move:'24/21 24/20'},{move:'24/20 13/10'}],answer:0},
-  {id:'op53_my42_160',opening:'53',myRoll:'42',choices:[{move:'8/4 6/4'},{move:'13/11 13/9'},{move:'24/20 13/11'},{move:'13/9 6/4'}],answer:0},
-  {id:'op53_my41_161',opening:'53',myRoll:'41',choices:[{move:'24/23 13/9'},{move:'13/9 6/5'},{move:'24/23 24/20'},{move:'24/20 6/5'}],answer:0},
-  {id:'op53_my33_162',opening:'53',myRoll:'33',choices:[{move:'24/21(2) 13/10(2)'},{move:'24/21(2) 6/3(2)'},{move:'24/21(2) 8/5(2)'},{move:'8/5(2) 6/3(2)'}],answer:0},
-  {id:'op53_my32_163',opening:'53',myRoll:'32',choices:[{move:'24/23 13/11'},{move:'13/11 6/5'},{move:'24/21'},{move:'13/10'}],answer:0},
-  {id:'op53_my31_164',opening:'53',myRoll:'31',choices:[{move:'8/5 6/5'},{move:'24/23 13/10'},{move:'24/23 24/21'},{move:'13/9 6/5'}],answer:0},
-  {id:'op53_my22_165',opening:'53',myRoll:'22',choices:[{move:'13/11(2) 6/4(2)'},{move:'13/9 6/4(2)'},{move:'13/11 8/4 6/4'},{move:'13/5'}],answer:0},
-  {id:'op53_my21_166',opening:'53',myRoll:'21',choices:[{move:'24/21 13/11'},{move:'13/11 13/10'},{move:'13/8'},{move:'13/11 8/5'}],answer:0},
-  {id:'op53_my11_167',opening:'53',myRoll:'11',choices:[{move:'8/7(2) 6/5(2)'},{move:'24/23 6/5(3)'},{move:'24/23(2) 6/5(2)'},{move:'24/23 8/7 6/5(2)'}],answer:0},
-  {id:'op52_my66_168',opening:'52',myRoll:'66',choices:[{move:'24/18(2) 13/7(2)'},{move:'24/18 13/7(3)'},{move:'13/1*(2)'},{move:'24/18(2) 13/1*'}],answer:0},
-  {id:'op52_my65_169',opening:'52',myRoll:'65',choices:[{move:'24/13'},{move:'24/18 13/8'},{move:'24/18 6/1*'},{move:'13/7 6/1*'}],answer:0},
-  {id:'op52_my64_170',opening:'52',myRoll:'64',choices:[{move:'13/3*'},{move:'24/14'},{move:'8/2 6/2'},{move:'24/18 13/9'}],answer:0},
-  {id:'op52_my63_171',opening:'52',myRoll:'63',choices:[{move:'8/3* 6/3'},{move:'24/21 13/8'},{move:'13/8 6/3*'},{move:'13/10 13/8'}],answer:0},
-  {id:'op52_my62_172',opening:'52',myRoll:'62',choices:[{move:'24/16'},{move:'24/18 13/11'},{move:'13/5'},{move:'24/18 8/6'}],answer:0},
-  {id:'op52_my61_173',opening:'52',myRoll:'61',choices:[{move:'13/7 8/7'},{move:'24/23 24/18'},{move:'13/6'},{move:'13/7 6/5'}],answer:0},
-  {id:'op52_my55_174',opening:'52',myRoll:'55',choices:[{move:'8/3*(2) 6/1*(2)'},{move:'13/3*(2)'},{move:'13/3* 8/3 6/1*'},{move:'13/3* 6/1*(2)'}],answer:0},
-  {id:'op52_my54_175',opening:'52',myRoll:'54',choices:[{move:'24/20 13/8'},{move:'24/15'},{move:'13/9 8/3*'},{move:'24/20 8/3*'}],answer:0},
-  {id:'op52_my53_176',opening:'52',myRoll:'53',choices:[{move:'8/3* 6/3'},{move:'24/21 13/8'},{move:'13/8 6/3*'},{move:'13/10 13/8'}],answer:0},
-  {id:'op52_my52_177',opening:'52',myRoll:'52',choices:[{move:'24/22 13/8'},{move:'13/11 13/8'},{move:'8/3* 3/1*'},{move:'13/11 8/3*'}],answer:0},
-  {id:'op52_my51_178',opening:'52',myRoll:'51',choices:[{move:'24/23 13/8'},{move:'24/18'},{move:'24/23 8/3*'},{move:'13/8 6/5'}],answer:0},
-  {id:'op52_my44_179',opening:'52',myRoll:'44',choices:[{move:'24/20(2) 13/9(2)'},{move:'13/5(2)'},{move:'24/20(2) 6/2(2)'},{move:'24/16(2)'}],answer:0},
-  {id:'op52_my43_180',opening:'52',myRoll:'43',choices:[{move:'24/20 6/3*'},{move:'13/9 6/3*'},{move:'24/21 24/20'},{move:'24/20 13/10'}],answer:0},
-  {id:'op52_my42_181',opening:'52',myRoll:'42',choices:[{move:'8/4 6/4'},{move:'24/20 13/11'},{move:'24/18'},{move:'24/22 24/20'}],answer:0},
-  {id:'op52_my41_182',opening:'52',myRoll:'41',choices:[{move:'13/8'},{move:'24/23 24/20'},{move:'8/3*'},{move:'24/23 13/9'}],answer:0},
-  {id:'op52_my33_183',opening:'52',myRoll:'33',choices:[{move:'8/5(2) 6/3*(2)'},{move:'13/10(2) 6/3*(2)'},{move:'24/21(2) 6/3*(2)'},{move:'24/21 13/10 6/3*(2)'}],answer:0},
-  {id:'op52_my32_184',opening:'52',myRoll:'32',choices:[{move:'24/23 13/11'},{move:'13/11 6/5'},{move:'24/21'},{move:'13/10'}],answer:0},
-  {id:'op52_my31_185',opening:'52',myRoll:'31',choices:[{move:'13/11 6/3*'},{move:'24/21 13/11'},{move:'6/3* 3/1*'},{move:'24/22 6/3*'}],answer:0},
-  {id:'op52_my22_186',opening:'52',myRoll:'22',choices:[{move:'13/11(2) 6/4(2)'},{move:'24/22(2) 6/4(2)'},{move:'24/22 13/11 6/4(2)'},{move:'24/20(2)'}],answer:0},
-  {id:'op52_my21_187',opening:'52',myRoll:'21',choices:[{move:'24/23 13/11'},{move:'6/3*'},{move:'24/21'},{move:'13/10'}],answer:0},
-  {id:'op52_my11_188',opening:'52',myRoll:'11',choices:[{move:'24/22 6/5(2)'},{move:'24/23 6/5(3)'},{move:'24/23(2) 6/5(2)'},{move:'8/5 6/5'}],answer:0},
-  {id:'op51_my66_189',opening:'51',myRoll:'66',choices:[{move:'24/18(2) 13/7(2)'},{move:'24/18 13/7(3)'},{move:'24/18(2) 8/2*(2)'},{move:'13/7(2) 8/2*(2)'}],answer:0},
-  {id:'op51_my65_190',opening:'51',myRoll:'65',choices:[{move:'24/13'},{move:'24/18 13/8'},{move:'13/2*'},{move:'24/18 6/1*'}],answer:0},
-  {id:'op51_my64_191',opening:'51',myRoll:'64',choices:[{move:'8/2* 6/2'},{move:'24/14'},{move:'24/18 13/9'},{move:'24/20 8/2*'}],answer:0},
-  {id:'op51_my63_192',opening:'51',myRoll:'63',choices:[{move:'24/15'},{move:'24/18 13/10'},{move:'24/21 8/2*'},{move:'24/21 24/18'}],answer:0},
-  {id:'op51_my62_193',opening:'51',myRoll:'62',choices:[{move:'24/16'},{move:'24/18 13/11'},{move:'24/22 24/18'},{move:'24/22 8/2*'}],answer:0},
-  {id:'op51_my61_194',opening:'51',myRoll:'61',choices:[{move:'13/7 8/7'},{move:'24/23 24/18'},{move:'8/2* 2/1*'},{move:'24/23 8/2*'}],answer:0},
-  {id:'op51_my55_195',opening:'51',myRoll:'55',choices:[{move:'8/3(2) 6/1*(2)'},{move:'13/3(2)'},{move:'13/8(2) 6/1*(2)'},{move:'13/3 8/3 6/1*'}],answer:0},
-  {id:'op51_my54_196',opening:'51',myRoll:'54',choices:[{move:'24/20 13/8'},{move:'24/15'},{move:'24/20 6/1*'},{move:'13/9 13/8'}],answer:0},
-  {id:'op51_my53_197',opening:'51',myRoll:'53',choices:[{move:'8/3 6/3'},{move:'24/21 13/8'},{move:'24/16'},{move:'13/10 13/8'}],answer:0},
-  {id:'op51_my52_198',opening:'51',myRoll:'52',choices:[{move:'24/22 13/8'},{move:'13/11 13/8'},{move:'13/11 6/1*'},{move:'24/22 6/1*'}],answer:0},
-  {id:'op51_my51_199',opening:'51',myRoll:'51',choices:[{move:'24/23 13/8'},{move:'24/18'},{move:'24/23 6/1*'},{move:'13/8 6/5'}],answer:0},
-  {id:'op51_my44_200',opening:'51',myRoll:'44',choices:[{move:'24/20(2) 13/9(2)'},{move:'8/4(2) 6/2*(2)'},{move:'24/20(2) 6/2*(2)'},{move:'13/9(2) 6/2*(2)'}],answer:0},
-  {id:'op51_my43_201',opening:'51',myRoll:'43',choices:[{move:'24/21 24/20'},{move:'13/10 13/9'},{move:'24/20 13/10'},{move:'24/21 13/9'}],answer:0},
-  {id:'op51_my42_202',opening:'51',myRoll:'42',choices:[{move:'8/4 6/4'},{move:'24/20 13/11'},{move:'24/18'},{move:'24/22 24/20'}],answer:0},
-  {id:'op51_my41_203',opening:'51',myRoll:'41',choices:[{move:'6/2* 2/1*'},{move:'13/8'},{move:'24/23 24/20'},{move:'24/23 13/9'}],answer:0},
-  {id:'op51_my33_204',opening:'51',myRoll:'33',choices:[{move:'24/21(2) 13/10(2)'},{move:'24/21(2) 6/3(2)'},{move:'13/10(2) 6/3(2)'},{move:'8/5(2) 6/3(2)'}],answer:0},
-  {id:'op51_my32_205',opening:'51',myRoll:'32',choices:[{move:'24/21 13/11'},{move:'13/11 13/10'},{move:'13/8'},{move:'24/22 13/10'}],answer:0},
-  {id:'op51_my31_206',opening:'51',myRoll:'31',choices:[{move:'8/5 6/5'},{move:'24/23 13/10'},{move:'13/9'},{move:'24/20'}],answer:0},
-  {id:'op51_my22_207',opening:'51',myRoll:'22',choices:[{move:'13/11(2) 6/4(2)'},{move:'24/22(2) 6/4(2)'},{move:'13/9 6/4(2)'},{move:'24/22 13/11 6/4(2)'}],answer:0},
-  {id:'op51_my21_208',opening:'51',myRoll:'21',choices:[{move:'24/21'},{move:'13/11 6/5'},{move:'24/23 13/11'},{move:'13/10'}],answer:0},
-  {id:'op51_my11_209',opening:'51',myRoll:'11',choices:[{move:'24/22 6/5(2)'},{move:'8/5 6/5'},{move:'24/23 13/10'},{move:'24/20'}],answer:0},
-  {id:'op43_my66_210',opening:'43',myRoll:'66',choices:[{move:'24/18(2) 13/7(2)'},{move:'24/18(2) 13/1*'},{move:'13/1*(2)'},{move:'24/18 13/7(3)'}],answer:0},
-  {id:'op43_my65_211',opening:'43',myRoll:'65',choices:[{move:'24/13'},{move:'24/18 13/8'},{move:'24/18 6/1*'},{move:'13/8 13/7'}],answer:0},
-  {id:'op43_my64_212',opening:'43',myRoll:'64',choices:[{move:'24/16*'},{move:'24/18 6/4*'},{move:'13/7 6/4*'},{move:'24/18 13/11'}],answer:0},
-  {id:'op43_my63_213',opening:'43',myRoll:'63',choices:[{move:'13/4*'},{move:'24/15'},{move:'24/18 13/10'},{move:'24/21 13/10'}],answer:0},
-  {id:'op43_my62_214',opening:'43',myRoll:'62',choices:[{move:'24/16*'},{move:'24/18 6/4*'},{move:'13/7 6/4*'},{move:'24/18 13/11'}],answer:0},
-  {id:'op43_my61_215',opening:'43',myRoll:'61',choices:[{move:'13/7 8/7'},{move:'24/23 24/18'},{move:'24/23 13/7'},{move:'13/6'}],answer:0},
-  {id:'op43_my55_216',opening:'43',myRoll:'55',choices:[{move:'8/3(2) 6/1*(2)'},{move:'13/8(2) 6/1*(2)'},{move:'13/3 8/3 6/1*'},{move:'13/3(2)'}],answer:0},
-  {id:'op43_my54_217',opening:'43',myRoll:'54',choices:[{move:'13/4*'},{move:'24/20 13/8'},{move:'24/20 6/1*'},{move:'24/15'}],answer:0},
-  {id:'op43_my53_218',opening:'43',myRoll:'53',choices:[{move:'13/4*'},{move:'24/15'},{move:'24/18 13/10'},{move:'24/21 24/18'}],answer:0},
-  {id:'op43_my52_219',opening:'43',myRoll:'52',choices:[{move:'13/8 6/4*'},{move:'24/22 13/8'},{move:'24/22 6/1*'},{move:'13/11 13/8'}],answer:0},
-  {id:'op43_my51_220',opening:'43',myRoll:'51',choices:[{move:'24/23 13/8'},{move:'24/18'},{move:'24/23 6/1*'},{move:'13/8 6/5'}],answer:0},
-  {id:'op43_my44_221',opening:'43',myRoll:'44',choices:[{move:'24/16* 8/4*(2)'},{move:'24/16* 13/9(2)'},{move:'24/16*(2)'},{move:'24/20(2) 8/4*(2)'}],answer:0},
-  {id:'op43_my43_222',opening:'43',myRoll:'43',choices:[{move:'13/10 8/4*'},{move:'24/21 8/4*'},{move:'8/4* 4/1*'},{move:'24/21 13/9'}],answer:0},
-  {id:'op43_my42_223',opening:'43',myRoll:'42',choices:[{move:'8/4* 6/4'},{move:'24/20 6/4*'},{move:'13/9 6/4*'},{move:'24/22 8/4*'}],answer:0},
-  {id:'op43_my41_224',opening:'43',myRoll:'41',choices:[{move:'24/23 8/4*'},{move:'24/23 24/20'},{move:'8/5 6/5'},{move:'24/20'}],answer:0},
-  {id:'op43_my33_225',opening:'43',myRoll:'33',choices:[{move:'24/21(2) 13/10(2)'},{move:'24/21(2) 6/3(2)'},{move:'13/10(2) 6/3(2)'},{move:'8/5(2) 6/3(2)'}],answer:0},
-  {id:'op43_my32_226',opening:'43',myRoll:'32',choices:[{move:'13/10 6/4*'},{move:'24/21 6/4*'},{move:'6/4* 4/1*'},{move:'6/5 6/4*'}],answer:0},
-  {id:'op43_my31_227',opening:'43',myRoll:'31',choices:[{move:'24/23 8/4*'},{move:'24/23 24/20'},{move:'8/4* 6/5'},{move:'8/4* 4/3'}],answer:0},
-  {id:'op43_my22_228',opening:'43',myRoll:'22',choices:[{move:'13/11(2) 6/4*(2)'},{move:'24/22 13/11 6/4*(2)'},{move:'24/22(2) 6/4*(2)'},{move:'24/20 6/4*(2)'}],answer:0},
-  {id:'op43_my21_229',opening:'43',myRoll:'21',choices:[{move:'24/23 6/4*'},{move:'24/23 13/11'},{move:'6/4* 4/3'},{move:'6/5 6/4*'}],answer:0},
-  {id:'op43_my11_230',opening:'43',myRoll:'11',choices:[{move:'6/4*(2)'},{move:'6/5(2) 6/4*'},{move:'24/22 6/5(2)'},{move:'8/5 6/5'}],answer:0},
-  {id:'op42_my66_231',opening:'42',myRoll:'66',choices:[{move:'24/18(2) 13/7(2)'},{move:'24/18(2) 8/2(2)'},{move:'24/18 13/7(3)'},{move:'13/7(2) 8/2(2)'}],answer:0},
-  {id:'op42_my65_232',opening:'42',myRoll:'65',choices:[{move:'24/13'},{move:'24/18 13/8'},{move:'13/8 13/7'},{move:'13/2'}],answer:0},
-  {id:'op42_my64_233',opening:'42',myRoll:'64',choices:[{move:'8/2 6/2'},{move:'24/14'},{move:'24/18 13/9'},{move:'24/20 24/18'}],answer:0},
-  {id:'op42_my63_234',opening:'42',myRoll:'63',choices:[{move:'24/15'},{move:'24/18 13/10'},{move:'24/23 24/20'},{move:'13/8'}],answer:0},
-  {id:'op42_my62_235',opening:'42',myRoll:'62',choices:[{move:'24/18 13/11'},{move:'24/16'},{move:'13/5'},{move:'24/22 24/18'}],answer:0},
-  {id:'op42_my61_236',opening:'42',myRoll:'61',choices:[{move:'13/7 8/7'},{move:'24/23 24/18'},{move:'24/23 13/7'},{move:'13/7 6/5'}],answer:0},
-  {id:'op42_my55_237',opening:'42',myRoll:'55',choices:[{move:'13/3(2)'},{move:'13/3 8/3(2)'},{move:'13/8(2) 13/3'},{move:'13/8(4)'}],answer:0},
-  {id:'op42_my54_238',opening:'42',myRoll:'54',choices:[{move:'24/20 13/8'},{move:'13/9 13/8'},{move:'24/15'},{move:'13/4'}],answer:0},
-  {id:'op42_my53_239',opening:'42',myRoll:'53',choices:[{move:'8/3 6/3'},{move:'13/10 13/8'},{move:'13/5'},{move:'13/8 6/3'}],answer:0},
-  {id:'op42_my52_240',opening:'42',myRoll:'52',choices:[{move:'24/22 13/8'},{move:'13/11 13/8'},{move:'13/8 6/4'},{move:'13/6'}],answer:0},
-  {id:'op42_my51_241',opening:'42',myRoll:'51',choices:[{move:'24/23 13/8'},{move:'13/8 6/5'},{move:'24/18'},{move:'13/7'}],answer:0},
-  {id:'op42_my44_242',opening:'42',myRoll:'44',choices:[{move:'24/20(2) 13/9(2)'},{move:'24/20(2) 6/2(2)'},{move:'24/20(2) 8/4(2)'},{move:'24/16(2)'}],answer:0},
-  {id:'op42_my43_243',opening:'42',myRoll:'43',choices:[{move:'24/23 13/9'},{move:'24/23 24/20'},{move:'13/8'},{move:'13/9 6/5'}],answer:0},
-  {id:'op42_my42_244',opening:'42',myRoll:'42',choices:[{move:'8/4 6/4'},{move:'24/22 13/9'},{move:'24/20 13/11'},{move:'13/11 13/9'}],answer:0},
-  {id:'op42_my41_245',opening:'42',myRoll:'41',choices:[{move:'24/23 13/9'},{move:'24/23 24/20'},{move:'13/9 6/5'},{move:'24/20 6/5'}],answer:0},
-  {id:'op42_my33_246',opening:'42',myRoll:'33',choices:[{move:'8/5(2) 6/3(2)'},{move:'13/10(2) 6/3(2)'},{move:'13/10(2) 8/5(2)'},{move:'13/7(2)'}],answer:0},
-  {id:'op42_my32_247',opening:'42',myRoll:'32',choices:[{move:'24/22 13/10'},{move:'13/11 13/10'},{move:'13/8'},{move:'13/10 6/4'}],answer:0},
-  {id:'op42_my31_248',opening:'42',myRoll:'31',choices:[{move:'8/5 6/5'},{move:'24/23 13/10'},{move:'24/20'},{move:'13/9'}],answer:0},
-  {id:'op42_my22_249',opening:'42',myRoll:'22',choices:[{move:'24/22(2) 6/4(2)'},{move:'13/11(2) 6/4(2)'},{move:'24/20(2)'},{move:'24/22 13/11 6/4(2)'}],answer:0},
-  {id:'op42_my21_250',opening:'42',myRoll:'21',choices:[{move:'24/23 13/11'},{move:'24/23 24/22'},{move:'13/11 6/5'},{move:'13/10'}],answer:0},
-  {id:'op42_my11_251',opening:'42',myRoll:'11',choices:[{move:'8/7(2) 6/5(2)'},{move:'24/22 6/5(2)'},{move:'24/23(2) 6/5(2)'},{move:'24/23 6/5(3)'}],answer:0},
-  {id:'op41_my66_252',opening:'41',myRoll:'66',choices:[{move:'24/18(2) 13/7(2)'},{move:'24/18(2) 8/2*(2)'},{move:'24/18 13/7(3)'},{move:'13/7(2) 8/2*(2)'}],answer:0},
-  {id:'op41_my65_253',opening:'41',myRoll:'65',choices:[{move:'24/13'},{move:'24/18 13/8'},{move:'13/2*'},{move:'24/18 6/1*'}],answer:0},
-  {id:'op41_my64_254',opening:'41',myRoll:'64',choices:[{move:'24/20 13/8'},{move:'24/20 6/1*'},{move:'24/15'},{move:'13/9 13/8'}],answer:0},
-  {id:'op41_my63_255',opening:'41',myRoll:'63',choices:[{move:'24/15'},{move:'24/18 13/10'},{move:'24/21 8/2*'},{move:'24/21 24/18'}],answer:0},
-  {id:'op41_my62_256',opening:'41',myRoll:'62',choices:[{move:'24/16*'},{move:'8/3 6/3'},{move:'24/21 13/8'},{move:'24/21 6/1*'}],answer:0},
-  {id:'op41_my61_257',opening:'41',myRoll:'61',choices:[{move:'13/7 8/7'},{move:'24/23 24/18'},{move:'8/2* 2/1*'},{move:'24/23 8/2*'}],answer:0},
-  {id:'op41_my55_258',opening:'41',myRoll:'55',choices:[{move:'8/3(2) 6/1*(2)'},{move:'13/8(2) 6/1*(2)'},{move:'13/3 8/3 6/1*'},{move:'13/3(2)'}],answer:0},
-  {id:'op41_my54_259',opening:'41',myRoll:'54',choices:[{move:'24/20 13/8'},{move:'24/15'},{move:'24/20 6/1*'},{move:'13/9 13/8'}],answer:0},
-  {id:'op41_my53_260',opening:'41',myRoll:'53',choices:[{move:'8/3 6/3'},{move:'24/21 13/8'},{move:'13/10 13/8'},{move:'24/16'}],answer:0},
-  {id:'op41_my52_261',opening:'41',myRoll:'52',choices:[{move:'24/22 13/8'},{move:'13/11 13/8'},{move:'13/11 6/1*'},{move:'24/22 6/1*'}],answer:0},
-  {id:'op41_my51_262',opening:'41',myRoll:'51',choices:[{move:'24/23 13/8'},{move:'24/18'},{move:'24/23 6/1*'},{move:'13/8 6/5'}],answer:0},
-  {id:'op41_my44_263',opening:'41',myRoll:'44',choices:[{move:'24/16* 6/2*(2)'},{move:'24/16* 13/9(2)'},{move:'8/4(2) 6/2*(2)'},{move:'24/16*(2)'}],answer:0},
-  {id:'op41_my43_264',opening:'41',myRoll:'43',choices:[{move:'24/21 6/2*'},{move:'13/10 13/9'},{move:'24/21 13/9'},{move:'24/20 13/10'}],answer:0},
-  {id:'op41_my42_265',opening:'41',myRoll:'42',choices:[{move:'8/4 6/4'},{move:'24/20 13/11'},{move:'24/22 13/9'},{move:'24/22 6/2*'}],answer:0},
-  {id:'op41_my41_266',opening:'41',myRoll:'41',choices:[{move:'6/2* 2/1*'},{move:'24/23 6/2*'},{move:'24/23 13/9'},{move:'24/23 24/20'}],answer:0},
-  {id:'op41_my33_267',opening:'41',myRoll:'33',choices:[{move:'24/21(2) 13/10(2)'},{move:'24/21(2) 6/3(2)'},{move:'13/10(2) 6/3(2)'},{move:'24/18(2)'}],answer:0},
-  {id:'op41_my32_268',opening:'41',myRoll:'32',choices:[{move:'24/22 13/10'},{move:'24/21 13/11'},{move:'13/11 13/10'},{move:'24/22 24/21'}],answer:0},
-  {id:'op41_my31_269',opening:'41',myRoll:'31',choices:[{move:'8/5 6/5'},{move:'24/23 13/10'},{move:'24/23 24/21'},{move:'24/20'}],answer:0},
-  {id:'op41_my22_270',opening:'41',myRoll:'22',choices:[{move:'24/22(2) 6/4(2)'},{move:'13/11(2) 6/4(2)'},{move:'24/16*'},{move:'24/22 13/11 6/4(2)'}],answer:0},
-  {id:'op41_my21_271',opening:'41',myRoll:'21',choices:[{move:'24/23 13/11'},{move:'24/21'},{move:'13/10'},{move:'13/11 6/5'}],answer:0},
-  {id:'op41_my11_272',opening:'41',myRoll:'11',choices:[{move:'24/22 6/5(2)'},{move:'24/23 6/5(3)'},{move:'24/23(2) 6/5(2)'},{move:'8/5 6/5'}],answer:0},
-  {id:'op32_my66_273',opening:'32',myRoll:'66',choices:[{move:'24/18(2) 13/7(2)'},{move:'24/18(2) 13/1*'},{move:'13/1*(2)'},{move:'24/18 13/7(3)'}],answer:0},
-  {id:'op32_my65_274',opening:'32',myRoll:'65',choices:[{move:'24/13'},{move:'24/18 13/8'},{move:'24/18 6/1*'},{move:'13/8 13/7'}],answer:0},
-  {id:'op32_my64_275',opening:'32',myRoll:'64',choices:[{move:'24/14*'},{move:'8/2 6/2'},{move:'24/18 8/4*'},{move:'13/7 8/4*'}],answer:0},
-  {id:'op32_my63_276',opening:'32',myRoll:'63',choices:[{move:'13/4*'},{move:'24/15'},{move:'24/21 24/18'},{move:'24/18 13/10'}],answer:0},
-  {id:'op32_my62_277',opening:'32',myRoll:'62',choices:[{move:'24/18 6/4*'},{move:'13/7 6/4*'},{move:'24/18 13/11'},{move:'24/16'}],answer:0},
-  {id:'op32_my61_278',opening:'32',myRoll:'61',choices:[{move:'13/7 8/7'},{move:'24/23 24/18'},{move:'13/6'},{move:'24/18 6/5'}],answer:0},
-  {id:'op32_my55_279',opening:'32',myRoll:'55',choices:[{move:'8/3(2) 6/1*(2)'},{move:'13/8(2) 6/1*(2)'},{move:'13/3(2)'},{move:'13/3 8/3 6/1*'}],answer:0},
-  {id:'op32_my54_280',opening:'32',myRoll:'54',choices:[{move:'13/4*'},{move:'24/20 13/8'},{move:'24/15'},{move:'24/20 6/1*'}],answer:0},
-  {id:'op32_my53_281',opening:'32',myRoll:'53',choices:[{move:'13/4*'},{move:'24/15'},{move:'24/21 24/18'},{move:'24/18 13/10'}],answer:0},
-  {id:'op32_my52_282',opening:'32',myRoll:'52',choices:[{move:'13/8 6/4*'},{move:'24/22 13/8'},{move:'13/11 13/8'},{move:'24/22 6/1*'}],answer:0},
-  {id:'op32_my51_283',opening:'32',myRoll:'51',choices:[{move:'24/23 13/8'},{move:'24/18'},{move:'24/23 6/1*'},{move:'13/8 6/5'}],answer:0},
-  {id:'op32_my44_284',opening:'32',myRoll:'44',choices:[{move:'24/20(2) 8/4*(2)'},{move:'8/4*(2) 6/2(2)'},{move:'24/20(2) 13/9(2)'},{move:'13/9(2) 8/4*(2)'}],answer:0},
-  {id:'op32_my43_285',opening:'32',myRoll:'43',choices:[{move:'13/10 8/4*'},{move:'24/21 8/4*'},{move:'8/4* 4/1*'},{move:'24/21 24/20'}],answer:0},
-  {id:'op32_my42_286',opening:'32',myRoll:'42',choices:[{move:'8/4* 6/4'},{move:'24/20 6/4*'},{move:'13/9 6/4*'},{move:'24/22 8/4*'}],answer:0},
-  {id:'op32_my41_287',opening:'32',myRoll:'41',choices:[{move:'24/23 8/4*'},{move:'8/4* 4/3'},{move:'24/23 24/20'},{move:'13/8'}],answer:0},
-  {id:'op32_my33_288',opening:'32',myRoll:'33',choices:[{move:'24/21(2) 13/10(2)'},{move:'24/21(2) 6/3(2)'},{move:'13/10(2) 6/3(2)'},{move:'8/5(2) 6/3(2)'}],answer:0},
-  {id:'op32_my32_289',opening:'32',myRoll:'32',choices:[{move:'13/10 6/4*'},{move:'24/21 6/4*'},{move:'6/4* 4/1*'},{move:'24/21 13/11'}],answer:0},
-  {id:'op32_my31_290',opening:'32',myRoll:'31',choices:[{move:'8/5 6/5'},{move:'24/23 24/21'},{move:'8/4*'},{move:'24/20'}],answer:0},
-  {id:'op32_my22_291',opening:'32',myRoll:'22',choices:[{move:'6/4*(2)'},{move:'6/5(2) 6/4*'},{move:'24/22 6/5(2)'},{move:'24/23 6/5(3)'}],answer:0},
-  {id:'op32_my21_292',opening:'32',myRoll:'21',choices:[{move:'24/23 6/4*'},{move:'6/4* 4/3'},{move:'24/23 13/11'},{move:'6/5 6/4*'}],answer:0},
-  {id:'op32_my11_293',opening:'32',myRoll:'11',choices:[{move:'13/11(2) 6/4*(2)'},{move:'24/22 13/11 6/4*(2)'},{move:'13/9 6/4*(2)'},{move:'13/11 8/4* 6/4'}],answer:0},
-  {id:'op31_my66_294',opening:'31',myRoll:'66',choices:[{move:'24/18(2) 13/7(2)'},{move:'24/18(2) 8/2(2)'},{move:'24/18 13/7(3)'},{move:'24/18(2) 13/7 8/2'}],answer:0},
-  {id:'op31_my65_295',opening:'31',myRoll:'65',choices:[{move:'24/13'},{move:'24/18 13/8'},{move:'13/8 13/7'},{move:'13/2'}],answer:0},
-  {id:'op31_my64_296',opening:'31',myRoll:'64',choices:[{move:'24/14'},{move:'24/18 13/9'},{move:'8/2 6/2'},{move:'13/9 13/7'}],answer:0},
-  {id:'op31_my63_297',opening:'31',myRoll:'63',choices:[{move:'24/18 13/10'},{move:'24/15'},{move:'24/21 13/7'},{move:'24/21 24/18'}],answer:0},
-  {id:'op31_my62_298',opening:'31',myRoll:'62',choices:[{move:'24/18 13/11'},{move:'24/16'},{move:'24/22 24/18'},{move:'13/5'}],answer:0},
-  {id:'op31_my61_299',opening:'31',myRoll:'61',choices:[{move:'13/7 8/7'},{move:'24/23 24/18'},{move:'13/6'},{move:'24/23 13/7'}],answer:0},
-  {id:'op31_my55_300',opening:'31',myRoll:'55',choices:[{move:'13/3(2)'},{move:'13/3 8/3(2)'},{move:'13/8(2) 13/3'},{move:'13/8(4)'}],answer:0},
-  {id:'op31_my54_301',opening:'31',myRoll:'54',choices:[{move:'24/18 13/10'},{move:'24/15'},{move:'24/21 13/7'},{move:'24/21 24/18'}],answer:0},
-  {id:'op31_my53_302',opening:'31',myRoll:'53',choices:[{move:'8/3 6/3'},{move:'24/21 13/8'},{move:'13/10 13/8'},{move:'13/5'}],answer:0},
-  {id:'op31_my52_303',opening:'31',myRoll:'52',choices:[{move:'24/22 13/8'},{move:'13/11 13/8'},{move:'13/6'},{move:'13/8 6/4'}],answer:0},
-  {id:'op31_my51_304',opening:'31',myRoll:'51',choices:[{move:'24/23 13/8'},{move:'24/18'},{move:'13/8 6/5'},{move:'13/2'}],answer:0},
-  {id:'op31_my44_305',opening:'31',myRoll:'44',choices:[{move:'24/21(2) 13/10(2)'},{move:'24/21(2) 6/3(2)'},{move:'24/21(2) 8/5(2)'},{move:'24/18(2)'}],answer:0},
-  {id:'op31_my43_306',opening:'31',myRoll:'43',choices:[{move:'24/23 13/9'},{move:'13/8'},{move:'13/9 6/5'},{move:'24/23 8/4'}],answer:0},
-  {id:'op31_my42_307',opening:'31',myRoll:'42',choices:[{move:'8/4 6/4'},{move:'24/22 13/9'},{move:'24/18'},{move:'13/11 13/9'}],answer:0},
-  {id:'op31_my41_308',opening:'31',myRoll:'41',choices:[{move:'24/23 13/9'},{move:'13/8'},{move:'13/9 6/5'},{move:'24/23 6/2'}],answer:0},
-  {id:'op31_my33_309',opening:'31',myRoll:'33',choices:[{move:'24/21(2) 13/10(2)'},{move:'24/21(2) 6/3(2)'},{move:'24/21(2) 8/5(2)'},{move:'24/18(2)'}],answer:0},
-  {id:'op31_my32_310',opening:'31',myRoll:'32',choices:[{move:'24/22 13/10'},{move:'24/21 13/11'},{move:'24/22 24/21'},{move:'13/11 13/10'}],answer:0},
-  {id:'op31_my31_311',opening:'31',myRoll:'31',choices:[{move:'8/5 6/5'},{move:'24/23 13/10'},{move:'24/23 24/21'},{move:'13/9'}],answer:0},
-  {id:'op31_my22_312',opening:'31',myRoll:'22',choices:[{move:'13/5(2)'},{move:'13/9(2) 6/2(2)'},{move:'8/4(2) 6/2(2)'},{move:'13/9(2) 8/4(2)'}],answer:0},
-  {id:'op31_my21_313',opening:'31',myRoll:'21',choices:[{move:'24/23 13/11'},{move:'24/23 24/22'},{move:'24/21'},{move:'13/11 6/5'}],answer:0},
-  {id:'op31_my11_314',opening:'31',myRoll:'11',choices:[{move:'8/7(2) 6/5(2)'},{move:'24/22 6/5(2)'},{move:'24/23 6/5(3)'},{move:'24/23(2) 6/5(2)'}],answer:0},
-  {id:'op21_my66_315',opening:'21',myRoll:'66',choices:[{move:'24/18(2) 13/7(2)'},{move:'24/18(2) 8/2*(2)'},{move:'13/7(2) 8/2*(2)'},{move:'24/18 13/7(3)'}],answer:0},
-  {id:'op21_my65_316',opening:'21',myRoll:'65',choices:[{move:'24/13'},{move:'24/18 13/8'},{move:'13/2*'},{move:'24/18 6/1*'}],answer:0},
-  {id:'op21_my64_317',opening:'21',myRoll:'64',choices:[{move:'24/14*'},{move:'8/2* 6/2'},{move:'24/18 13/9'},{move:'24/18 6/2*'}],answer:0},
-  {id:'op21_my63_318',opening:'21',myRoll:'63',choices:[{move:'24/15'},{move:'24/18 13/10'},{move:'24/21 24/18'},{move:'24/21 8/2*'}],answer:0},
-  {id:'op21_my62_319',opening:'21',myRoll:'62',choices:[{move:'24/18 13/11'},{move:'24/16'},{move:'24/22 24/18'},{move:'24/22 8/2*'}],answer:0},
-  {id:'op21_my61_320',opening:'21',myRoll:'61',choices:[{move:'13/7 8/7'},{move:'8/2* 2/1*'},{move:'24/23 24/18'},{move:'24/23 8/2*'}],answer:0},
-  {id:'op21_my55_321',opening:'21',myRoll:'55',choices:[{move:'8/3(2) 6/1*(2)'},{move:'13/8(2) 6/1*(2)'},{move:'13/3(2)'},{move:'13/3 8/3 6/1*'}],answer:0},
-  {id:'op21_my54_322',opening:'21',myRoll:'54',choices:[{move:'24/20 13/8'},{move:'24/15'},{move:'13/9 13/8'},{move:'24/20 6/1*'}],answer:0},
-  {id:'op21_my53_323',opening:'21',myRoll:'53',choices:[{move:'8/3 6/3'},{move:'24/21 13/8'},{move:'24/21 6/1*'},{move:'24/16'}],answer:0},
-  {id:'op21_my52_324',opening:'21',myRoll:'52',choices:[{move:'24/22 13/8'},{move:'13/11 13/8'},{move:'24/22 6/1*'},{move:'13/11 6/1*'}],answer:0},
-  {id:'op21_my51_325',opening:'21',myRoll:'51',choices:[{move:'24/23 13/8'},{move:'24/18'},{move:'24/23 6/1*'},{move:'13/8 6/5'}],answer:0},
-  {id:'op21_my44_326',opening:'21',myRoll:'44',choices:[{move:'24/20(2) 13/9(2)'},{move:'8/4(2) 6/2*(2)'},{move:'24/20(2) 6/2*(2)'},{move:'13/9(2) 6/2*(2)'}],answer:0},
-  {id:'op21_my43_327',opening:'21',myRoll:'43',choices:[{move:'24/21 13/9'},{move:'24/21 6/2*'},{move:'13/10 13/9'},{move:'24/20 13/10'}],answer:0},
-  {id:'op21_my42_328',opening:'21',myRoll:'42',choices:[{move:'8/4 6/4'},{move:'24/22 13/9'},{move:'24/20 13/11'},{move:'24/18'}],answer:0},
-  {id:'op21_my41_329',opening:'21',myRoll:'41',choices:[{move:'6/2* 2/1*'},{move:'24/23 13/9'},{move:'24/23 24/20'},{move:'13/8'}],answer:0},
-  {id:'op21_my33_330',opening:'21',myRoll:'33',choices:[{move:'24/21(2) 13/10(2)'},{move:'24/21(2) 6/3(2)'},{move:'13/10(2) 6/3(2)'},{move:'24/18(2)'}],answer:0},
-  {id:'op21_my32_331',opening:'21',myRoll:'32',choices:[{move:'24/21 13/11'},{move:'24/22 13/10'},{move:'24/22 24/21'},{move:'13/11 13/10'}],answer:0},
-  {id:'op21_my31_332',opening:'21',myRoll:'31',choices:[{move:'24/23 13/11'},{move:'24/21'},{move:'24/23 24/22'},{move:'13/10'}],answer:0},
-  {id:'op21_my22_333',opening:'21',myRoll:'22',choices:[{move:'13/11(2) 6/4(2)'},{move:'24/22(2) 6/4(2)'},{move:'24/20(2)'},{move:'24/22 13/11 6/4(2)'}],answer:0},
-  {id:'op21_my21_334',opening:'21',myRoll:'21',choices:[{move:'24/22 6/5(2)'},{move:'24/23 6/5(3)'},{move:'24/23(2) 6/5(2)'},{move:'8/5 6/5'}],answer:0},
-  {id:'op21_my11_335',opening:'21',myRoll:'11',choices:[{move:'24/22 6/5(2)'},{move:'24/23 6/5(3)'},{move:'24/23(2) 6/5(2)'},{move:'8/5 6/5'}],answer:0}
-];
 
 // ══════════════════════════════════════
 // RESPONSE QUIZ
 // ══════════════════════════════════════
-let PROBLEMS=[...PRESET_PROBLEMS];
+let PROBLEMS=[];
 let rFilter='all',rFiltered=[...PROBLEMS],rIdx=0;
 let rPendingIdx=null,rConfirmed=false;
 let rCurrentP=null; // シャッフル済みの現在の問題
+let rDataState='loading'; // 'loading' | 'ready' | 'failed'
 
 // Fisher-Yates シャッフルで選択肢をランダム化
 // answer インデックスも追従させる
@@ -1030,12 +692,80 @@ function rShuffleChoices(problem){
   };
 }
 
-function rLoadStats(){return JSON.parse(localStorage.getItem('rmq5')||'{"t":0,"c":0}');}
-function rSaveStats(s){localStorage.setItem('rmq5',JSON.stringify(s));}
+function rConvertProblems(raw){
+  return raw.problems.map(p=>({
+    id:`resp_${p.opening}_${p.myRoll}`,
+    opening:p.opening,
+    myRoll:p.myRoll,
+    choices:p.moves.map(m=>({move:m.m,eq:m.eq})),
+    answer:0,
+  }));
+}
+function rCheckOpeningConsistency(raw){
+  if(!raw.openingMoves) return;
+  Object.entries(raw.openingMoves).forEach(([key,move])=>{
+    if(OPENINGS[key]!==move){
+      console.warn(`[response-quiz] OPENINGS['${key}']='${OPENINGS[key]}' does not match data openingMoves['${key}']='${move}'`);
+    }
+  });
+}
+function rShowLoadStatus(){
+  const el=document.getElementById('rUploadStatus');
+  if(rDataState==='failed'){
+    el.textContent=LANG==='ja'
+      ?'⚠ データ読み込み失敗。通信環境を確認して再読み込みしてください'
+      :'⚠ Failed to load data. Check your connection and reload.';
+  } else if(rDataState==='loading'){
+    el.textContent=LANG==='ja'?'読み込み中…':'Loading…';
+  } else {
+    el.textContent='';
+  }
+}
+async function rLoadData(){
+  try{
+    const res=await fetch('./data/response-quiz-v2.json');
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    rCheckOpeningConsistency(data);
+    PROBLEMS=rConvertProblems(data);
+    rDataState='ready';
+  }catch(err){
+    console.warn('response quiz data load failed:',err);
+    rDataState='failed';
+  }
+  if(document.getElementById('screen-response').classList.contains('active')){
+    rApplyFilter(rFilter); rIdx=0;
+    rBuildFilter(); rLoad(); rShowLoadStatus();
+  }
+}
+rLoadData();
+
+// PROBLEMSは非同期fetchで後から入れ替わりうるため、rFilteredは常にこれで再計算する
+// (rFilteredをトップレベルで一度だけ初期化して使い回すと、fetch解決前に画面を開いた
+//  場合に空配列のまま固定されてしまう)
+function rApplyFilter(key){
+  const s=rLoadStats();
+  const missedIds=new Set(s.missed||[]);
+  if(key==='all') rFiltered=[...PROBLEMS];
+  else if(key==='missed') rFiltered=PROBLEMS.filter(p=>missedIds.has(p.id));
+  else rFiltered=PROBLEMS.filter(p=>p.opening===key);
+  rFilter=key;
+}
+
+function rLoadStats(){return JSON.parse(localStorage.getItem('rmq6')||'{"t":0,"c":0,"lossSum":0,"lossCount":0,"missed":[]}');}
+function rSaveStats(s){localStorage.setItem('rmq6',JSON.stringify(s));}
 function rUpdateStat(){
   const s=rLoadStats(),el=document.getElementById('rStatDisp');
   if(!s.t){el.textContent='—';return;}
-  el.innerHTML=`<b>${s.c}</b>/${s.t} ${Math.round(s.c/s.t*100)}%`;
+  const acc=Math.round(s.c/s.t*100);
+  const avgLoss=s.lossCount?(s.lossSum/s.lossCount):null;
+  el.innerHTML=avgLoss===null?`<b>${acc}%</b>`:`<b>${acc}%</b> / ${avgLoss<=0?'0.000':'-'+avgLoss.toFixed(3)}`;
+}
+function rResetStats(){
+  const msg=LANG==='ja'?'統計をリセットしますか?':'Reset stats?';
+  if(!confirm(msg)) return;
+  localStorage.removeItem('rmq6');
+  rUpdateStat(); rBuildFilter();
 }
 function rLoadFile(e){
   const file=e.target.files[0]; if(!file) return;
@@ -1081,13 +811,21 @@ function parseTxt(text){
 }
 function rBuildFilter(){
   const bar=document.getElementById('rFilterBar'); bar.innerHTML='';
-  const ops=['all',...new Set(PROBLEMS.map(p=>p.opening))];
-  ops.forEach(key=>{
-    const label=key==='all'?(LANG==='ja'?'すべて':'ALL'):key[0]+'-'+key[1]+(key.includes('alt')?'*':'');
+  const s=rLoadStats();
+  const missedIds=new Set(s.missed||[]);
+  const missedCount=PROBLEMS.filter(p=>missedIds.has(p.id)).length;
+  const keys=['all',...new Set(PROBLEMS.map(p=>p.opening))];
+  if(missedCount) keys.push('missed');
+  keys.forEach(key=>{
+    let label;
+    if(key==='all') label=LANG==='ja'?'すべて':'ALL';
+    else if(key==='missed') label=(LANG==='ja'?'未正解 ':'MISSED ')+missedCount;
+    else label=key[0]+'-'+key[1]+(key.includes('alt')?'*':'');
     const btn=document.createElement('button');
-    btn.className='filter-btn'+(rFilter===key?' active':'');
+    const isActive=rFilter===key;
+    btn.className='filter-btn'+(isActive?' active':'')+(key==='missed'&&!isActive?' missed-mode':'');
     btn.textContent=label;
-    btn.onclick=()=>{ rFilter=key; rFiltered=key==='all'?[...PROBLEMS]:PROBLEMS.filter(p=>p.opening===key); rIdx=0; rBuildFilter(); rLoad(); };
+    btn.onclick=()=>{ rApplyFilter(key); rIdx=0; rBuildFilter(); rLoad(); };
     bar.appendChild(btn);
   });
 }
@@ -1124,7 +862,7 @@ function rRenderChoices(p){
   p.choices.forEach((ch,i)=>{
     const btn=document.createElement('button');
     btn.className='choice-btn'; btn.id=`rc${i}`;
-    btn.innerHTML=`<span class="ck">${RKEYS[i]}</span><span class="cm">${ch.move}</span><span class="cx" id="rm${i}"></span>`;
+    btn.innerHTML=`<span class="ck">${RKEYS[i]}</span><span class="cm">${ch.move}</span><span class="ceq" id="req${i}"></span><span class="cx" id="rm${i}"></span>`;
     btn.onclick=()=>rSelectPending(i);
     c.appendChild(btn);
   });
@@ -1136,27 +874,52 @@ function rSelectPending(idx){
   p.choices.forEach((_,i)=>{
     document.getElementById(`rc${i}`).className='choice-btn'+(i===idx?' pending':'');
     document.getElementById(`rm${i}`).textContent='';
+    document.getElementById(`req${i}`).textContent='';
   });
   rShowBtns('confirm');
   rShowMoveBoard(p,idx);
+}
+function rEquityClass(loss){
+  if(loss<=0) return 'best';
+  if(loss<0.02) return 'close';
+  if(loss<0.08) return 'error';
+  return 'blunder';
 }
 function rConfirm(){
   const p=rCurrentP;
   if(rPendingIdx===null||rConfirmed) return;
   rConfirmed=true;
   const correct=p.answer,idx=rPendingIdx,isRight=idx===correct;
-  p.choices.forEach((_,i)=>{
-    const btn=document.getElementById(`rc${i}`),mark=document.getElementById(`rm${i}`);
+  p.choices.forEach((ch,i)=>{
+    const btn=document.getElementById(`rc${i}`),mark=document.getElementById(`rm${i}`),eqEl=document.getElementById(`req${i}`);
     btn.classList.remove('pending');
     btn.onclick=()=>rViewMove(i);
     if(i===idx&&isRight){btn.classList.add('correct');mark.textContent='✓';}
     else if(i===correct){btn.classList.add('reveal');mark.textContent='✓';}
     else{btn.classList.add('wrong');mark.textContent='✗';}
+    if(typeof ch.eq==='number'){
+      const loss=Math.max(0,-ch.eq);
+      eqEl.textContent=loss<=0?'BEST':'-'+loss.toFixed(3);
+      eqEl.className='ceq '+rEquityClass(loss);
+    }
   });
-  rShowMoveBoard(p,correct);
+  const correctMove=p.choices[correct].move;
+  drawBoard('rBoard',boardAfterWhiteResponse(p.opening,correctMove),makeWhiteHL(correctMove));
+  const selEq=p.choices[idx].eq;
+  const hasEq=typeof selEq==='number';
+  const yourLoss=hasEq?Math.max(0,-selEq):0;
+  let label=`→ ${correctMove} ✓`;
+  if(!isRight&&hasEq){
+    label+=LANG==='ja'?` ｜ あなたの選択: -${yourLoss.toFixed(3)}`:` | YOUR PICK: -${yourLoss.toFixed(3)}`;
+  }
+  document.getElementById('rBoardLabel').textContent=label;
   rShowBtns('next');
   const s=rLoadStats(); s.t++; if(isRight) s.c++;
-  rSaveStats(s); rUpdateStat();
+  if(hasEq){ s.lossSum=(s.lossSum||0)+yourLoss; s.lossCount=(s.lossCount||0)+1; }
+  const missed=new Set(s.missed||[]);
+  if(isRight) missed.delete(p.id); else missed.add(p.id);
+  s.missed=[...missed];
+  rSaveStats(s); rUpdateStat(); rBuildFilter();
 }
 function rViewMove(idx){
   const p=rCurrentP;
@@ -1173,6 +936,8 @@ function rShowMoveBoard(p,choiceIdx){
 function rHandleBtn(){ if(!rConfirmed) return; rIdx=(rIdx+1)%rFiltered.length; rLoad(); }
 let _rKeyBound=false;
 function rInit(){
+  if(rDataState!=='ready') rShowLoadStatus(); // 'ready'後はrLoadFile()の独自メッセージを上書きしない
+  rApplyFilter(rFilter);
   rBuildFilter(); rUpdateStat(); rLoad();
   if(!_rKeyBound){
     _rKeyBound=true;
@@ -1185,6 +950,7 @@ function rInit(){
         if(e.key==='Enter'&&rPendingIdx!==null) rConfirm();
       } else if(e.key==='Enter') rHandleBtn();
     });
+    document.getElementById('rStatDisp').addEventListener('dblclick',rResetStats);
   }
 }
 
@@ -1272,7 +1038,8 @@ document.getElementById('oBoard').addEventListener('click',()=>{ if(!oRevealed) 
 // ══════════════════════════════════════
 // PIP COUNT
 // ══════════════════════════════════════
-let pDifficulty='easy', pPoints=[], pPipW=0, pPipB=0, pDone=false;
+let pDifficulty='medium', pPoints=[], pPipW=0, pPipB=0, pDone=false;
+let pPhase='all',pPositions=[],pDataState='loading',pLastPosition=null;
 
 function pLoadStats(){return JSON.parse(localStorage.getItem('pip5')||'{"t":0,"c":0}');}
 function pSaveStats(s){localStorage.setItem('pip5',JSON.stringify(s));}
@@ -1280,6 +1047,66 @@ function pUpdateStat(){
   const s=pLoadStats(),el=document.getElementById('pStatDisp');
   if(!s.t){el.textContent='—';return;}
   el.innerHTML=`<b>${s.c}</b>/${s.t} ${Math.round(s.c/s.t*100)}%`;
+}
+
+function pAvailablePhases(){
+  const present=new Set(pPositions.map(pos=>pos.phase));
+  return ['race','holding','prime','bearin'].filter(k=>present.has(k));
+}
+function pBuildPhaseFilter(){
+  const bar=document.getElementById('pFilterBar'); if(!bar) return;
+  bar.innerHTML='';
+  const phases=pDataState==='ready'?pAvailablePhases():[];
+  const keys=['all',...phases];
+  keys.forEach(key=>{
+    const btn=document.createElement('button');
+    btn.className='filter-btn'+(pPhase===key?' active':'');
+    btn.textContent=key==='all'?'ALL':key.toUpperCase();
+    btn.onclick=()=>{ pPhase=key; pBuildPhaseFilter(); pNewPos(); };
+    bar.appendChild(btn);
+  });
+}
+function pShowLoadStatus(){
+  const el=document.getElementById('pLoadStatus'); if(!el) return;
+  if(pDataState==='failed'){
+    el.textContent=LANG==='ja'
+      ?'⚠ 実戦局面データの読み込みに失敗しました。ランダム生成で練習します'
+      :'⚠ Failed to load real positions. Practicing with generated ones instead.';
+  } else {
+    el.textContent='';
+  }
+}
+async function pLoadData(){
+  try{
+    const res=await fetch('./data/pip-positions.json');
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    if(!Array.isArray(data)||!data.length) throw new Error('empty dataset');
+    pPositions=data;
+    pDataState='ready';
+  }catch(err){
+    console.warn('pip position data load failed:',err);
+    pDataState='failed';
+  }
+  pShowLoadStatus();
+  if(document.getElementById('screen-pip').classList.contains('active')){
+    pBuildPhaseFilter(); pNewPos();
+  }
+}
+pLoadData();
+
+// フェーズフィルターに合致する実戦局面から、直前と同じ局面を避けて1つ選ぶ
+// (フェッチ失敗時やフィルターに該当局面がない場合は既存のpGenPosition()にフォールバック)
+function pPickPosition(){
+  let pool=pPositions;
+  if(pPhase!=='all') pool=pool.filter(pos=>pos.phase===pPhase);
+  if(!pool.length) return null;
+  if(pool.length===1) return pool[0];
+  let choice,tries=0;
+  do{ choice=pool[Math.floor(Math.random()*pool.length)]; tries++; }
+  while(choice===pLastPosition&&tries<10);
+  pLastPosition=choice;
+  return choice;
 }
 
 function pGenPosition(level){
@@ -1313,14 +1140,9 @@ function pResetInputs(){
   ['hWhite','hBlack','hDiff','hLead'].forEach(id=>{ const el=document.getElementById(id); el.textContent=''; el.className='field-hint'; });
 }
 
-function pSetDiff(lv){
-  pDifficulty=lv;
-  document.querySelectorAll('[data-lv]').forEach(b=>b.classList.toggle('active',b.dataset.lv===lv));
-  pNewPos();
-}
-
 function pNewPos(){
-  pPoints=pGenPosition(pDifficulty);
+  const picked=pDataState==='ready'?pPickPosition():null;
+  pPoints=picked?picked.board.slice():pGenPosition(pDifficulty);
   const p=pCalcPips(pPoints); pPipW=p.w; pPipB=p.b;
   pDone=false;
   pResetInputs();
@@ -1396,6 +1218,8 @@ function pCheckAll(){
 
 let _pKeyBound=false;
 function pInit(){
+  pShowLoadStatus();
+  pBuildPhaseFilter();
   pNewPos();
   if(!_pKeyBound){
     _pKeyBound=true;

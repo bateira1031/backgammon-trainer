@@ -1,9 +1,12 @@
-const CACHE_NAME = 'bg-trainer-v3';
+const CACHE_NAME = 'bg-trainer-v4';
 const ASSETS = [
   './index.html',
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
+  './data/response-quiz-v2.json',
+  './data/openings-v2.json',
+  './data/pip-positions.json',
 ];
 
 self.addEventListener('install', event => {
